@@ -35,6 +35,22 @@ Linux и macOS:
 cp .env_example .env
 ```
 
+Пример `.env`:
+
+```env
+DJANGO_SECRET_KEY=change_for_safety
+DJANGO_DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+POSTGRES_DB=team_finder
+POSTGRES_USER=team_finder
+POSTGRES_PASSWORD=team_finder
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5437
+
+TASK_VERSION=1
+```
+
 В `.env_example` уже стоит `TASK_VERSION=1` и `POSTGRES_PORT=5437`.
 Значения `POSTGRES_*` совпадают с `docker-compose.yml`.
 
