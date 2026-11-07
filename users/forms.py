@@ -3,10 +3,8 @@ import uuid
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.core.exceptions import ValidationError
-from django.core.validators import MaxLengthValidator
 
-from users.utils import GitHubUrlMixin, normalize_phone
+from users.utils import normalize_phone
 
 User = get_user_model()
 
@@ -20,21 +18,14 @@ class RegisterForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ("name", "surname", "email", "password")
-        labels = {
-            "name": "Имя",
-            "surname": "Фамилия",
-            "email": "Email",
-        }
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password"])
-        # Phone is required by the model but not shown on registration form.
-        user.phone = f"8{uuid.uuid4().int % 10**10:010d}"[:12]
+        user.phone = f"8{uuid.uuid4().int % 10**10:010d}"
         if commit:
             user.save()
         return user
-
 
 class LoginForm(forms.Form):
     email = forms.EmailField(label="Email")
@@ -68,50 +59,17 @@ class LoginForm(forms.Form):
         return self.user_cache
 
 
-class ProfileEditForm(GitHubUrlMixin, forms.ModelForm):
+class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ("name", "surname", "avatar", "about", "phone", "github_url")
-        labels = {
-            "name": "Имя",
-            "surname": "Фамилия",
-            "avatar": "Аватар",
-            "about": "О себе",
-            "phone": "Телефон",
-            "github_url": "GitHub",
-        }
         widgets = {
             "avatar": forms.FileInput(),
             "about": forms.Textarea(attrs={"rows": 4}),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["avatar"].required = False
-        phone = self.fields["phone"]
-        phone.max_length = 20
-        phone.validators = [
-            item
-            for item in phone.validators
-            if not isinstance(item, MaxLengthValidator)
-        ]
-        phone.validators.append(MaxLengthValidator(20))
-
     def clean_phone(self):
-        try:
-            phone = normalize_phone(self.cleaned_data.get("phone"))
-        except ValidationError as error:
-            raise forms.ValidationError(error.messages) from error
-        if (
-            User.objects.filter(phone=phone)
-            .exclude(pk=self.instance.pk)
-            .exists()
-        ):
-            raise forms.ValidationError(
-                "Этот номер телефона уже используется"
-            )
-        return phone
-
+        return normalize_phone(self.cleaned_data["phone"])
 
 class PasswordChangeForm(forms.Form):
     old_password = forms.CharField(

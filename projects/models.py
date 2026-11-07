@@ -7,33 +7,45 @@ from users.utils import validate_github_url
 
 
 class Project(models.Model):
-    name = models.CharField(max_length=constants.MAX_LENGTH_PROJECT_NAME)
-    description = models.TextField(blank=True, default="")
+    name = models.CharField(
+        "Название",
+        max_length=constants.MAX_LENGTH_PROJECT_NAME,
+    )
+    description = models.TextField("Описание", blank=True, default="")
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name="Автор",
         on_delete=models.CASCADE,
         related_name="owned_projects",
     )
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    github_url = models.URLField(blank=True, default="")
+    created_at = models.DateTimeField(
+        "Дата создания",
+        auto_now_add=True,
+        db_index=True,
+    )
+    github_url = models.URLField(
+        "GitHub",
+        blank=True,
+        default="",
+        validators=[validate_github_url],
+    )
     status = models.CharField(
+        "Статус",
         max_length=constants.MAX_LENGTH_STATUS,
         choices=constants.STATUS_CHOICES,
         default=constants.STATUS_OPEN,
     )
     participants = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
+        verbose_name="Участники",
         related_name="participated_projects",
         blank=True,
     )
 
     class Meta:
         ordering = ("-created_at",)
-
-    def clean(self):
-        super().clean()
-        if self.github_url:
-            self.github_url = validate_github_url(self.github_url)
+        verbose_name = "проект"
+        verbose_name_plural = "проекты"
 
     def __str__(self):
         return self.name

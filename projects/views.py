@@ -9,20 +9,18 @@ from django.views.decorators.http import require_POST
 from projects.forms import ProjectForm
 from projects.models import Project
 from team_finder import constants
-from users.service import get_paginated_objects
+from users.services import get_paginated_objects
 
 
-def _project_queryset():
-    return (
-        Project.objects.select_related("owner")
-        .prefetch_related("participants")
-        .all()
+def get_projects_with_related():
+    return Project.objects.select_related("owner").prefetch_related(
+        "participants"
     )
 
 
 @ensure_csrf_cookie
 def project_list(request):
-    page = get_paginated_objects(request, _project_queryset())
+    page = get_paginated_objects(request, get_projects_with_related())
     return render(
         request,
         "projects/project_list.html",
@@ -36,7 +34,7 @@ def project_list(request):
 
 @ensure_csrf_cookie
 def project_detail(request, project_id):
-    project = get_object_or_404(_project_queryset(), id=project_id)
+    project = get_object_or_404(get_projects_with_related(), id=project_id)
     return render(
         request,
         "projects/project-details.html",
@@ -60,31 +58,31 @@ def favorite_projects(request):
 @login_required
 def project_create(request):
     form = ProjectForm(request.POST or None)
-    if form.is_valid():
-        project = form.save(commit=False)
-        project.owner = request.user
-        project.save()
-        project.participants.add(request.user)
-        return redirect("projects:project_detail", project_id=project.id)
-    return render(
-        request,
-        "projects/create-project.html",
-        {"form": form, "is_edit": False},
-    )
+    if not form.is_valid():
+        return render(
+            request,
+            "projects/create-project.html",
+            {"form": form, "is_edit": False},
+        )
+    project = form.save(commit=False)
+    project.owner = request.user
+    project.save()
+    project.participants.add(request.user)
+    return redirect("projects:project_detail", project_id=project.id)
 
 
 @login_required
 def project_edit(request, project_id):
     project = get_object_or_404(Project, id=project_id, owner=request.user)
     form = ProjectForm(request.POST or None, instance=project)
-    if form.is_valid():
-        form.save()
-        return redirect("projects:project_detail", project_id=project.id)
-    return render(
-        request,
-        "projects/create-project.html",
-        {"form": form, "is_edit": True},
-    )
+    if not form.is_valid():
+        return render(
+            request,
+            "projects/create-project.html",
+            {"form": form, "is_edit": True},
+        )
+    form.save()
+    return redirect("projects:project_detail", project_id=project.id)
 
 
 @login_required

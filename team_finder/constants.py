@@ -16,6 +16,7 @@ STATUS_CHOICES = [
 
 # Pagination
 PAGINATION_PAGE_SIZE = 12
+DEFAULT_PAGE_NUMBER = 1
 
 # External URLs
 GITHUB_DOMAIN = "github.com"
