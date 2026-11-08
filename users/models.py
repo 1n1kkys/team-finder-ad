@@ -66,6 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.name} {self.surname} ({self.email})"
+
     def save(self, *args, **kwargs):
         if not self.avatar:
             self.avatar = self.generate_avatar()

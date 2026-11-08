@@ -7,6 +7,7 @@ from django.contrib.auth import (
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
+from team_finder import constants
 from users.forms import (
     LoginForm,
     PasswordChangeForm,
@@ -40,12 +41,12 @@ def logout_view(request):
 
 
 def user_list(request):
-    active_filter = request.GET.get("filter")
+    active_filter = request.GET.get("filter", constants.DEFAULT_USER_FILTER)
     if request.user.is_authenticated and active_filter in USER_FILTERS:
         users = filter_users(request.user, active_filter)
         query_prefix = f"filter={active_filter}&"
     else:
-        active_filter = ""
+        active_filter = constants.DEFAULT_USER_FILTER
         users = User.objects.all()
         query_prefix = ""
 
